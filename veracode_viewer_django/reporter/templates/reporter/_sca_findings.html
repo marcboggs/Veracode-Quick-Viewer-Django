@@ -1,0 +1,51 @@
+{% if sca_components %}
+    <p><a href="{% url 'reporter:export_sca_csv' build_id=build_id %}" class="button">Export SCA Findings to CSV</a></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Version</th>
+                <th>Vendor</th>
+                <th>CPE</th>
+                <th>Description</th>
+                <th>Licenses</th>
+                <th>Vulnerabilities (CVE - Severity)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comp in sca_components %}
+            <tr>
+                <td>{{ comp.Component }}</td>
+                <td>{{ comp.Version }}</td>
+                <td>{{ comp.Vendor|default:"N/A" }}</td>
+                <td>{{ comp.CPE|default:"N/A" }}</td>
+                <td>{{ comp.Description|default:"N/A" }}</td>
+                <td>
+                    {% if comp.Licenses %}
+                        <ul>
+                        {% for lic in comp.Licenses %}
+                            <li><a href="{{ lic.url }}" target="_blank" rel="noopener noreferrer">{{ lic.name }}</a></li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if comp.Vulnerabilities %}
+                        <ul>
+                        {% for vuln in comp.Vulnerabilities %}
+                            <li>{{ vuln.cveid }} (Severity: {{ vuln.severity }})</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No SCA components found in this report.</p>
+{% endif %}

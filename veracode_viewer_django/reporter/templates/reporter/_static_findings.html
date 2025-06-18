@@ -1,0 +1,50 @@
+<form method="GET" action="{% url 'reporter:report_detail' build_id=build_id %}#static">
+    <input type="hidden" name="tab" value="static"> {# To potentially help keep tab active, though JS might be better #}
+    Filter by Severity:
+    <input type="text" name="severity_filter" value="{{ severity_filter|default:'' }}" placeholder="e.g., 5">
+    Filter by CWE:
+    <input type="text" name="cwe_filter" value="{{ cwe_filter|default:'' }}" placeholder="e.g., 89 or part of CWE name">
+    <button type="submit">Filter</button>
+    {% if severity_filter or cwe_filter %}
+      <a href="{% url 'reporter:report_detail' build_id=build_id %}#static">Clear Filters</a>
+    {% endif %}
+</form>
+
+<p><a href="{% url 'reporter:export_static_csv' build_id=build_id %}" class="button">Export Static Findings to CSV</a></p>
+
+{% if flaws %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Severity</th>
+                <th>CWE</th>
+                <th>Category</th>
+                <th>File</th>
+                <th>Line</th>
+                <th>Function</th>
+                <th>Status</th>
+                <th>Module</th>
+                <th>Grace Period Expires</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flaw in flaws %}
+            <tr>
+                <td>{{ flaw.ID }}</td>
+                <td>{{ flaw.Severity }}</td>
+                <td>{{ flaw.CWE }}</td>
+                <td>{{ flaw.Category }}</td>
+                <td>{{ flaw.File }}</td>
+                <td>{{ flaw.Line }}</td>
+                <td>{{ flaw.Function|slice:":100" }}{% if flaw.Function|length > 100 %}...{% endif %}</td> {# Truncate long function names #}
+                <td>{{ flaw.Status }}</td>
+                <td>{{ flaw.Module|slice:":50" }}{% if flaw.Module|length > 50 %}...{% endif %}</td> {# Truncate long module names #}
+                <td>{{ flaw.grace_period_expires|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No static findings match your criteria, or no static findings in this report.</p>
+{% endif %}

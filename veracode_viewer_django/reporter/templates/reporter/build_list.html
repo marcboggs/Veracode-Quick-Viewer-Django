@@ -1,0 +1,30 @@
+{% extends "reporter/base.html" %}
+
+{% block page_title %}Builds for {{ app_name|default:app_id }}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'reporter:application_list' %}">&laquo; Back to Application List</a></p>
+
+{% if error %}
+    <div class="error-message">
+        <p>Error fetching builds for application {{ app_name|default:app_id }}: {{ error }}</p>
+    </div>
+{% elif builds %}
+    <ul>
+        {% for build in builds %}
+            {% if build.version and build.build_id %}
+                <li>
+                    <a href="{% url 'reporter:report_detail' build_id=build.build_id %}">{{ build.version }}</a>
+                    (Build ID: {{ build.build_id }}, Policy Updated: {{ build.policy_updated_date|default:"N/A" }})
+                </li>
+            {% else %}
+                <li>Invalid build data structure encountered.</li>
+            {% endif %}
+        {% empty %}
+            <p>No builds found for this application.</p>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No builds found for this application, or an issue occurred while fetching them.</p>
+{% endif %}
+{% endblock %}

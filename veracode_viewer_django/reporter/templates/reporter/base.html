@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Veracode Report Viewer{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'reporter/style.css' %}"> {# Example static file linkage #}
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'reporter:application_list' %}">Applications</a></li>
+            {# Add other navigation links here as needed #}
+        </ul>
+    </nav>
+
+    <div class="container">
+        {% block header %}
+        <h1>{% block page_title %}Page Title{% endblock %}</h1>
+        {% endblock header %}
+
+        {% block content %}
+        <p>Default content. Override this block in child templates.</p>
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; {% now "Y" %} Veracode Report Viewer</p>
+    </footer>
+
+    {% block extra_js %}
+    {# Placeholder for additional JavaScript files #}
+    {% endblock %}
+</body>
+</html>

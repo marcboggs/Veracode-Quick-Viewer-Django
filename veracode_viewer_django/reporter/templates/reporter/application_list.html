@@ -1,0 +1,27 @@
+{% extends "reporter/base.html" %}
+
+{% block page_title %}Veracode Applications{% endblock %}
+
+{% block content %}
+{% if error %}
+    <div class="error-message">
+        <p>Error fetching applications: {{ error }}</p>
+        <p>Please ensure your VERACODE_API_KEY and VERACODE_API_SECRET are correctly configured in your settings or environment variables.</p>
+    </div>
+{% elif applications %}
+    <ul>
+        {% for app in applications %}
+            {% if app.profile and app.profile.name and app.id %}
+                <li>
+                    <a href="{% url 'reporter:build_list' app_id=app.id %}">{{ app.profile.name }}</a>
+                    (ID: {{ app.id }})
+                </li>
+            {% else %}
+                <li>Invalid application data structure encountered.</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No applications found, or an issue occurred while fetching them.</p>
+{% endif %}
+{% endblock %}

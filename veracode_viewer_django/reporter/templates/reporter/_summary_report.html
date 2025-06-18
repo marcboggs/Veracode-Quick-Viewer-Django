@@ -1,0 +1,52 @@
+{% if summary_data %}
+    <p><strong>Total Open Static Findings:</strong> {{ summary_data.total_static_open }}</p>
+
+    <h4>Severity Breakdown (Static Open):</h4>
+    {% if summary_data.severity_breakdown %}
+        <ul>
+        {% for severity, count in summary_data.severity_breakdown.items|dictsort:"0" reversed %}
+            <li>Severity {{ severity }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No severity breakdown available.</p>
+    {% endif %}
+
+    <h4>Top CWEs (Static Open):</h4>
+    {% if summary_data.cwe_breakdown %}
+        <ul>
+        {% for cwe, count in summary_data.cwe_breakdown.most_common.5 %} {# Display top 5 #}
+            <li>{{ cwe }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No CWE breakdown available.</p>
+    {% endif %}
+
+    <h4>Top Categories (Static Open):</h4>
+    {% if summary_data.category_breakdown %}
+        <ul>
+        {% for category, count in summary_data.category_breakdown.most_common.5 %} {# Display top 5 #}
+            <li>{{ category }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No category breakdown available.</p>
+    {% endif %}
+
+    <hr>
+    <p><strong>Total SCA Components:</strong> {{ summary_data.total_sca_components }}</p>
+    <h4>Top SCA Vendors:</h4>
+    {% if summary_data.sca_vendor_breakdown %}
+        <ul>
+        {% for vendor, count in summary_data.sca_vendor_breakdown.most_common.5 %} {# Display top 5 #}
+            <li>{{ vendor }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No SCA vendor breakdown available.</p>
+    {% endif %}
+
+{% else %}
+    <p>No summary data available.</p>
+{% endif %}

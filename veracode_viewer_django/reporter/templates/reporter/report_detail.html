@@ -1,0 +1,67 @@
+{% extends "reporter/base.html" %}
+
+{% block page_title %}Report for {{ app_name|default:"Unknown App" }} - Build {{ build_version|default:build_id }}{% endblock %}
+
+{% block content %}
+<p>
+    <a href="{% url 'reporter:application_list' %}">All Applications</a>
+    {% if app_id %}
+        &raquo; <a href="{% url 'reporter:build_list' app_id=app_id %}">Builds for {{ app_name|default:app_id }}</a>
+    {% endif %}
+</p>
+
+<h2>Report for: {{ app_name|default:"Unknown App" }} - Build {{ build_version|default:build_id }}</h2>
+<p>Build ID: {{ build_id }}</p>
+
+{% if error %}
+    <div class="error-message">
+        <p>Error loading report: {{ error }}</p>
+    </div>
+{% else %}
+    <div class="report-navigation">
+        <a href="#summary">Summary</a> |
+        <a href="#static">Static Findings ({{ flaws_original|length }})</a> |
+        <a href="#sca">SCA Components ({{ sca_components|length }})</a> |
+        <a href="#compliance">Compliance</a> |
+        <a href="#rawxml">Raw XML</a>
+    </div>
+
+    <hr>
+    <section id="summary">
+        <h3>Summary Report</h3>
+        {% include "reporter/_summary_report.html" with summary_data=summary_data %}
+    </section>
+    <hr>
+    <section id="static">
+        <h3>Static Findings</h3>
+        {% include "reporter/_static_findings.html" with flaws=flaws severity_filter=severity_filter cwe_filter=cwe_filter build_id=build_id %}
+    </section>
+    <hr>
+    <section id="sca">
+        <h3>Software Composition Analysis (SCA)</h3>
+        {% include "reporter/_sca_findings.html" with sca_components=sca_components %}
+    </section>
+    <hr>
+    <section id="compliance">
+        <h3>Compliance Report</h3>
+        {% include "reporter/_compliance_report.html" with compliance_data=compliance_data %}
+    </section>
+    <hr>
+    <section id="rawxml">
+        <h3>Raw DetailedReport XML</h3>
+        {% include "reporter/_raw_xml_view.html" with raw_xml=raw_xml %}
+    </section>
+{% endif %}
+
+<style>
+.report-navigation a { margin-right: 10px; }
+section { margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
+.error-message { color: red; padding: 10px; border: 1px solid red; background-color: #ffe0e0; }
+/* Add more specific styles for tables etc. in a static CSS file later */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #f2f2f2; }
+pre { white-space: pre-wrap; word-wrap: break-word; background-color: #f5f5f5; padding: 10px; border: 1px solid #ccc; }
+</style>
+
+{% endblock %}
