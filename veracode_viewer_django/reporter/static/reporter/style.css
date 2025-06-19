@@ -127,3 +127,20 @@ footer {
     background: #35424a;
     color: #ffffff;
 }
+
+/* Styles for compact lists within table cells */
+.compact-list {
+    list-style-type: none; /* Remove default bullets */
+    padding-left: 0;       /* Remove default left padding */
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.compact-list li {
+    margin-bottom: 4px; /* Space between list items */
+    font-size: 0.9em;   /* Slightly smaller font for list items */
+}
+
+.compact-list li a {
+    text-decoration: underline; /* Ensure links are still identifiable */
+}

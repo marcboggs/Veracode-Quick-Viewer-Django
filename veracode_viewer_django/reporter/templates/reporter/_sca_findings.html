@@ -22,7 +22,7 @@
                 <td>{{ comp.Description|default:"N/A" }}</td>
                 <td>
                     {% if comp.Licenses %}
-                        <ul>
+                        <ul class="compact-list">
                         {% for lic in comp.Licenses %}
                             <li><a href="{{ lic.url }}" target="_blank" rel="noopener noreferrer">{{ lic.name }}</a></li>
                         {% endfor %}
@@ -33,7 +33,7 @@
                 </td>
                 <td>
                     {% if comp.Vulnerabilities %}
-                        <ul>
+                        <ul class="compact-list">
                         {% for vuln in comp.Vulnerabilities %}
                             <li>{{ vuln.cveid }} (Severity: {{ vuln.severity }})</li>
                         {% endfor %}

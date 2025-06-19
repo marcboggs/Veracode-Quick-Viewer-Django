@@ -110,6 +110,16 @@ def report_detail(request, build_id):
         context['raw_xml'] = raw_xml
 
         flaws, sca_components = xml_parser.parse_detailed_report_xml(raw_xml)
+
+        # Add check for empty parsed data but non-empty raw_xml
+        if not context.get('error') and isinstance(raw_xml, str) and raw_xml.strip() and not flaws and not sca_components:
+            context['error'] = ("The report data was received from the API, but no flaws or SCA components "
+                                "could be extracted. This might mean the report is empty, or the XML "
+                                "structure was not as expected. Please review the Raw XML section below if available.")
+            logger.warning(f"No flaws or SCA components parsed for build_id: {build_id}, though raw_xml was present.")
+            # Optionally, we could return render here if we don't want to proceed further
+            # return render(request, 'reporter/report_detail.html', context)
+
         context['flaws_original'] = flaws # Keep original for summary/compliance
         context['sca_components'] = sca_components
 
