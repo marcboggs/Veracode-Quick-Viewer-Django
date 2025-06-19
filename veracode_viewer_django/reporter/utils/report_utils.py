@@ -30,20 +30,39 @@ def generate_summary_data(flaws, sca_components):
     Returns:
         dict: A dictionary containing summary information.
     """
-    if flaws is None: flaws = []
-    if sca_components is None: sca_components = []
+    if not isinstance(flaws, list):
+        logger.error(f"generate_summary_data expected 'flaws' to be a list, received {type(flaws)}. Processing as empty list.")
+        flaws = []
+    if not isinstance(sca_components, list):
+        logger.error(f"generate_summary_data expected 'sca_components' to be a list, received {type(sca_components)}. Processing as empty list.")
+        sca_components = []
 
     summary = {}
 
-    static_open = [f for f in flaws if f.get('Status', '').lower() in ("open", "new", "reopen")]
+    static_open = []
+    for f_idx, f_item in enumerate(flaws):
+        if not isinstance(f_item, dict):
+            logger.error(f"generate_summary_data expected item in 'flaws' at index {f_idx} to be a dict, received {type(f_item)}. Skipping.")
+            continue
+        if f_item.get('Status', '').lower() in ("open", "new", "reopen"):
+            static_open.append(f_item)
+
     summary['total_static_open'] = len(static_open)
 
-    summary['severity_breakdown'] = Counter(f.get('Severity') for f in static_open)
-    summary['cwe_breakdown'] = Counter(f.get('CWE') for f in static_open)
-    summary['category_breakdown'] = Counter(f.get('Category') for f in static_open)
+    summary['severity_breakdown'] = Counter(f.get('Severity') for f in static_open) # Assumes static_open items are dicts
+    summary['cwe_breakdown'] = Counter(f.get('CWE') for f in static_open) # Assumes static_open items are dicts
+    summary['category_breakdown'] = Counter(f.get('Category') for f in static_open) # Assumes static_open items are dicts
 
-    summary['total_sca_components'] = len(sca_components)
-    summary['sca_vendor_breakdown'] = Counter(c.get('Vendor') for c in sca_components if c.get('Vendor'))
+    summary['total_sca_components'] = len(sca_components) # Total count before filtering for vendor breakdown
+
+    valid_sca_components_for_vendor_breakdown = []
+    for c_idx, c_item in enumerate(sca_components):
+        if not isinstance(c_item, dict):
+            logger.error(f"generate_summary_data expected item in 'sca_components' at index {c_idx} to be a dict, received {type(c_item)}. Skipping for vendor breakdown.")
+            continue
+        if c_item.get('Vendor'): # Check if vendor key exists and is truthy
+             valid_sca_components_for_vendor_breakdown.append(c_item)
+    summary['sca_vendor_breakdown'] = Counter(c.get('Vendor') for c in valid_sca_components_for_vendor_breakdown)
 
     # Helper for formatting bar charts in templates if needed, or do it in template
     # def bar_data(count, total, width=20):
@@ -55,18 +74,24 @@ def generate_summary_data(flaws, sca_components):
     # }
     return summary
 
-def generate_compliance_data(flaws, raw_xml_string, sca_components):
+def generate_compliance_data(flaws, sca_components, raw_xml_string):
     """
     Generates compliance data based on flaws, SCA components, and report generation date.
     Args:
         flaws (list): A list of static flaw dictionaries.
-        raw_xml_string (str): The raw XML report as a string.
         sca_components (list): A list of SCA component dictionaries.
+        raw_xml_string (str): The raw XML report as a string.
     Returns:
         dict: A dictionary containing compliance status and reasons.
     """
-    if flaws is None: flaws = []
-    if sca_components is None: sca_components = []
+    # Argument type checks
+    if not isinstance(flaws, list): # flaws is the 1st argument
+        logger.error(f"generate_compliance_data expected 'flaws' (1st arg) to be a list, received {type(flaws)}. Processing as empty list.")
+        flaws = []
+    if not isinstance(sca_components, list): # sca_components is the 2nd argument
+        logger.error(f"generate_compliance_data expected 'sca_components' (2nd arg) to be a list, received {type(sca_components)}. Processing as empty list.")
+        sca_components = []
+    # raw_xml_string (3rd arg) is handled by the existing try-except block for XML parsing.
 
     compliance_info = {
         'generation_date_valid': False,
@@ -120,6 +145,9 @@ def generate_compliance_data(flaws, raw_xml_string, sca_components):
 
     now = datetime.utcnow()
     for flaw in flaws:
+        if not isinstance(flaw, dict):
+            logger.error(f"generate_compliance_data expected item in 'flaws' to be a dict, received {type(flaw)}. Skipping item: {str(flaw)[:100]}")
+            continue
         status = flaw.get('Status', '').lower()
         severity = flaw.get('Severity') # Assuming severity is string like "5", "4"
         grace_period_str = flaw.get('grace_period_expires', '')
@@ -151,19 +179,25 @@ def generate_compliance_data(flaws, raw_xml_string, sca_components):
     high_critical_severities_numeric = ["4", "5"]
 
     for component in sca_components:
+        if not isinstance(component, dict):
+            logger.error(f"generate_compliance_data expected item in 'sca_components' to be a dict, received {type(component)}. Skipping item: {str(component)[:100]}")
+            continue
         component_id = component.get('component_id', 'Unknown Component') # Or 'name', 'ref', etc.
         version = component.get('version', '')
         component_display = f"{component_id}:{version}" if version else component_id
 
         vulnerabilities = component.get('vulnerabilities', [])
-        if not isinstance(vulnerabilities, list): # Ensure vulnerabilities is iterable
-            logger.warning(f"Vulnerabilities for component {component_display} is not a list, skipping.")
+        if not isinstance(vulnerabilities, list):
+            logger.warning(f"Vulnerabilities for component {component_display} is not a list (type: {type(vulnerabilities)}), skipping.")
             continue
 
         for vuln in vulnerabilities:
+            if not isinstance(vuln, dict):
+                logger.error(f"generate_compliance_data expected item in component's 'Vulnerabilities' to be a dict, received {type(vuln)}. Skipping item: {str(vuln)[:100]}")
+                continue
             severity = str(vuln.get('severity', '')).upper() # Convert to string and uppercase
-            cve = vuln.get('cve', {}).get('cve_id', 'N/A')
-            cvss_score = vuln.get('cvss_score', 'N/A') # Or severity from Veracode's perspective
+            cve = vuln.get('cve', {}).get('cve_id', 'N/A') # .get on vuln is safe
+            cvss_score = vuln.get('cvss_score', 'N/A') # .get on vuln is safe
 
             is_high_critical = False
             if severity in high_critical_severities_text:

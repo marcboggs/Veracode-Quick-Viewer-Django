@@ -27,7 +27,7 @@ def get_veracode_hmac_auth():
             "VERACODE_API_KEY and VERACODE_API_SECRET must be set in Django settings."
             "It is recommended to set these via environment variables."
         )
-    return RequestsAuthPluginVeracodeHMAC()
+    return RequestsAuthPluginVeracodeHMAC(api_key=api_key, api_secret=api_secret)
 
 def get_applications():
     """
