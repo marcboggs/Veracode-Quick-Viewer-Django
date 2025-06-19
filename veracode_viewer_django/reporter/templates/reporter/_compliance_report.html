@@ -5,6 +5,7 @@
         <li><strong>Scan Within 30 Days:</strong> {{ compliance_data.scan_within_30_days|yesno:"Yes,No,N/A" }}</li>
         <li><strong>No Expired Findings:</strong> {{ compliance_data.no_expired_findings|yesno:"Yes,No,N/A" }}</li>
         <li><strong>No Open Very High/High Severity Findings:</strong> {{ compliance_data.no_open_high_critical|yesno:"Yes,No,N/A" }}</li>
+        <li><strong>No High/Critical SCA Vulnerabilities:</strong> {{ compliance_data.no_high_critical_sca_vulns|yesno:"Yes,No,N/A" }}</li>
     </ul>
 
     <h4>Details:</h4>

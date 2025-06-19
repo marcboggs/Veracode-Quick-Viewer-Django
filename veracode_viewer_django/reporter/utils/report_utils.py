@@ -55,16 +55,18 @@ def generate_summary_data(flaws, sca_components):
     # }
     return summary
 
-def generate_compliance_data(flaws, raw_xml_string):
+def generate_compliance_data(flaws, raw_xml_string, sca_components):
     """
-    Generates compliance data based on flaws and report generation date.
+    Generates compliance data based on flaws, SCA components, and report generation date.
     Args:
         flaws (list): A list of static flaw dictionaries.
         raw_xml_string (str): The raw XML report as a string.
+        sca_components (list): A list of SCA component dictionaries.
     Returns:
         dict: A dictionary containing compliance status and reasons.
     """
     if flaws is None: flaws = []
+    if sca_components is None: sca_components = []
 
     compliance_info = {
         'generation_date_valid': False,
@@ -74,6 +76,8 @@ def generate_compliance_data(flaws, raw_xml_string):
         'expired_finding_reasons': [],
         'no_open_high_critical': True,
         'high_critical_reasons': [],
+        'no_high_critical_sca_vulns': True,
+        'high_critical_sca_reasons': [],
         'messages': []
     }
 
@@ -141,5 +145,41 @@ def generate_compliance_data(flaws, raw_xml_string):
     else:
         compliance_info['messages'].append("\n❌ Open findings with severity 4 or 5 exist:")
         compliance_info['messages'].extend([f"  - {reason}" for reason in compliance_info['high_critical_reasons']])
+
+    # SCA Compliance Checks
+    high_critical_severities_text = ["HIGH", "CRITICAL"]
+    high_critical_severities_numeric = ["4", "5"]
+
+    for component in sca_components:
+        component_id = component.get('component_id', 'Unknown Component') # Or 'name', 'ref', etc.
+        version = component.get('version', '')
+        component_display = f"{component_id}:{version}" if version else component_id
+
+        vulnerabilities = component.get('vulnerabilities', [])
+        if not isinstance(vulnerabilities, list): # Ensure vulnerabilities is iterable
+            logger.warning(f"Vulnerabilities for component {component_display} is not a list, skipping.")
+            continue
+
+        for vuln in vulnerabilities:
+            severity = str(vuln.get('severity', '')).upper() # Convert to string and uppercase
+            cve = vuln.get('cve', {}).get('cve_id', 'N/A')
+            cvss_score = vuln.get('cvss_score', 'N/A') # Or severity from Veracode's perspective
+
+            is_high_critical = False
+            if severity in high_critical_severities_text:
+                is_high_critical = True
+            elif severity in high_critical_severities_numeric: # Check numeric strings like "4", "5"
+                is_high_critical = True
+
+            if is_high_critical:
+                compliance_info['no_high_critical_sca_vulns'] = False
+                reason = f"Component '{component_display}' has {str(vuln.get('severity', '')).upper()} vulnerability '{cve}' (Severity: {cvss_score})"
+                compliance_info['high_critical_sca_reasons'].append(reason)
+
+    if compliance_info['no_high_critical_sca_vulns']:
+        compliance_info['messages'].append("✅ No SCA components with High or Critical severity vulnerabilities found.")
+    else:
+        compliance_info['messages'].append("\n❌ SCA components with High or Critical severity vulnerabilities found:")
+        compliance_info['messages'].extend([f"  - {reason}" for reason in compliance_info['high_critical_sca_reasons']])
 
     return compliance_info

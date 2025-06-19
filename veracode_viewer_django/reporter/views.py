@@ -124,7 +124,7 @@ def report_detail(request, build_id):
         context['sca_components'] = sca_components
 
         context['summary_data'] = report_utils.generate_summary_data(flaws, sca_components)
-        context['compliance_data'] = report_utils.generate_compliance_data(flaws, raw_xml)
+        context['compliance_data'] = report_utils.generate_compliance_data(flaws, sca_components, raw_xml)
 
         # Filtering
         filtered_flaws = list(flaws) # Make a copy to filter
