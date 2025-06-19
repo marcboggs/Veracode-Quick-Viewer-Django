@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -30,19 +31,37 @@ def parse_detailed_report_xml(xml_data_string):
         logger.error(f"An unexpected error occurred during XML parsing setup: {e}")
         return [], []
 
+    # Dynamic namespace detection
+    current_namespaces = NS  # Default to static NS
+    if root.tag and '}' in root.tag:
+        match = re.match(r'\{([^}]+)\}', root.tag)
+        if match:
+            extracted_uri = match.group(1)
+            if extracted_uri:
+                dynamic_namespaces = {'v': extracted_uri}
+                current_namespaces = dynamic_namespaces
+                logger.info(f"Dynamically detected namespace: {extracted_uri}")
+            else:
+                logger.info("Namespace URI could not be extracted, using default.")
+        else:
+            logger.info("Root tag format does not contain expected namespace structure, using default.")
+    else:
+        logger.info("Root tag missing or not in namespace format, using default.")
+
+
     flaws, sca_components = [], []
 
     # Extract static flaws
-    for severity in root.findall('.//v:severity', NS):
+    for severity in root.findall('.//v:severity', current_namespaces):
         severity_level = severity.get('level', 'Unknown')
-        for category in severity.findall('v:category', NS):
+        for category in severity.findall('v:category', current_namespaces):
             category_name = category.get('categoryname', 'Unknown')
-            for cwe in category.findall('v:cwe', NS):
+            for cwe in category.findall('v:cwe', current_namespaces):
                 cwe_id = cwe.get('cweid', 'N/A')
                 cwe_name = cwe.get('cwename', 'Unknown')
-                static_flaws_element = cwe.find('v:staticflaws', NS)
+                static_flaws_element = cwe.find('v:staticflaws', current_namespaces)
                 if static_flaws_element is not None:
-                    for flaw in static_flaws_element.findall('v:flaw', NS):
+                    for flaw in static_flaws_element.findall('v:flaw', current_namespaces):
                         flaws.append({
                             'ID': flaw.get('issueid', ''),
                             'Severity': severity_level,
@@ -59,9 +78,9 @@ def parse_detailed_report_xml(xml_data_string):
 
     # Extract SCA components
     # Original script path: './/v:software_composition_analysis/v:component'
-    sca_results_element = root.find('v:software_composition_analysis', NS)
+    sca_results_element = root.find('v:software_composition_analysis', current_namespaces)
     if sca_results_element is not None:
-        for comp in sca_results_element.findall('v:component', NS):
+        for comp in sca_results_element.findall('v:component', current_namespaces):
             sca_components.append({
                 'Component': comp.get('component_name', ''),
                 'Version': comp.get('version', ''),
@@ -69,8 +88,8 @@ def parse_detailed_report_xml(xml_data_string):
                 'Vendor': comp.get('vendor', ''),
                 'Description': comp.get('description', ''), # Or 'library' as per some schemas
                 # Add other relevant SCA fields if needed, e.g., licenses, vulnerabilities
-                'Licenses': [{'name': lic.get('name'), 'url': lic.get('license_url')} for lic in comp.findall('.//v:license', NS)],
-                'Vulnerabilities': [{'cveid': vuln.get('cveid'), 'severity': vuln.get('severity')} for vuln in comp.findall('.//v:vulnerability', NS)]
+                'Licenses': [{'name': lic.get('name'), 'url': lic.get('license_url')} for lic in comp.findall('.//v:license', current_namespaces)],
+                'Vulnerabilities': [{'cveid': vuln.get('cveid'), 'severity': vuln.get('severity')} for vuln in comp.findall('.//v:vulnerability', current_namespaces)]
             })
 
     # Add extraction for policy compliance and report metadata if needed
